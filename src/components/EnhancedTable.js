@@ -130,7 +130,7 @@ class EnhancedTable extends React.Component {
       order: 'desc',
       orderBy: props.orderBy,
       page: 0,
-      rowsPerPage: 5,
+      rowsPerPage: 10,
     };
   }
 

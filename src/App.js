@@ -207,7 +207,7 @@ class App extends Component {
                 }
               ))}
               orderBy="addedOn"
-              rowsPerPageOptions={[5, 10]}
+              rowsPerPageOptions={[5, 10, 15]}
               tableHeading="Plate whitelist"
             />
             <form
