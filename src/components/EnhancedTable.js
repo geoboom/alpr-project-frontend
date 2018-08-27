@@ -42,6 +42,7 @@ class EnhancedTableHead extends React.Component {
         <TableRow>
           {rows.map(row => (
             <TableCell
+              padding="dense"
               key={row.id}
               numeric={row.numeric}
               sortDirection={orderBy === row.id ? order : false}
@@ -116,7 +117,7 @@ const styles = theme => ({
     marginTop: theme.spacing.unit * 3,
   },
   table: {
-    minWidth: 350,
+    minWidth: 300,
   },
   tableWrapper: {
     overflowX: 'auto',
@@ -179,7 +180,10 @@ class EnhancedTable extends React.Component {
                 .map((n) => {
                   return (
                     <TableRow
-                      hover
+                      // hover
+                      style={{
+                        backgroundColor: n.highlight ? '#ebfaeb' : '#ffffff',
+                      }}
                       tabIndex={-1}
                       key={n.id}
                     >
@@ -187,14 +191,23 @@ class EnhancedTable extends React.Component {
                         rows.map(({ id }, index) => {
                           if (index === 0) {
                             return (
-                              <TableCell component="th" scope="row">
+                              <TableCell
+                                padding="dense"
+                                component="th"
+                                scope="row"
+                                key={id}
+                              >
                                 {n[id]}
                               </TableCell>
                             );
                           }
 
                           return (
-                            <TableCell numeric>
+                            <TableCell
+                              padding="dense"
+                              numeric
+                              key={id}
+                            >
                               {n[id]}
                             </TableCell>
                           );

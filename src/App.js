@@ -249,7 +249,7 @@ const mapStateToProps = (state) => {
 
   return {
     plateLog: plateLog
-      .map(d => ({ ...d, id: d.uuid })),
+      .map(d => ({ ...d, id: d.uuid, highlight: d.inWhitelist === 'Y' })),
     plateStore: plateStore
       .map(d => ({ id: d.plate, ...d })),
   };
