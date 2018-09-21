@@ -1,4 +1,5 @@
+import ip from 'ip';
+
 export default {
-  // SERVER_URL: 'http://localhost:3001',
-  SERVER_URL: 'http://192.168.0.2:3001',
+  SERVER_URL: `http://${ip.address()}:3001`,
 };
