@@ -12,7 +12,6 @@ const plateLogReducer = (state = initialState, action) => {
     case actionTypes.PLATELOG_DOWNLOAD: {
       const { d, r } = action.payload;
       if (r) {
-        console.log(d);
         fileDownload(d, `insead_alpr_report-${moment().format('DD-MM-YYYY-HHmm')}.csv`);
 
         return state;

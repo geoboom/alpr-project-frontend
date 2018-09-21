@@ -127,8 +127,8 @@ class App extends Component {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          paddingLeft: '10px',
-          paddingRight: '10px',
+          paddingLeft: '50px',
+          paddingRight: '50px',
           paddingBottom: '25px',
           paddingTop: '25px',
         }}
@@ -175,11 +175,12 @@ class App extends Component {
             </Button>
           </div>
           <div
-            style={{ minWidth: '10px', width: '20px' }}
+            // style={{ minWidth: '10px', width: '80px' }}
+            style={{ flex: 0.2 }}
           />
           <div
             style={{
-              flex: 1,
+              flex: 2,
               flexDirection: 'column',
               display: 'flex',
             }}
@@ -249,7 +250,7 @@ const mapStateToProps = (state) => {
 
   return {
     plateLog: plateLog
-      .map(d => ({ ...d, id: d.uuid, highlight: d.inWhitelist === 'Y' })),
+      .map(d => ({ ...d, id: d.uuid + d.plate, highlight: d.inWhitelist === 'Y' })),
     plateStore: plateStore
       .map(d => ({ id: d.plate, ...d })),
   };
