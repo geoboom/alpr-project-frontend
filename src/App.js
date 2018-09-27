@@ -4,11 +4,14 @@ import { connect } from 'react-redux';
 import { withStyles } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
 import TextField from '@material-ui/core/TextField';
+import Input from '@material-ui/core/Input';
 import DeleteIcon from '@material-ui/icons/Delete';
+import EditIcon from '@material-ui/icons/Edit';
 import Tooltip from '@material-ui/core/Tooltip';
+import DoneIcon from '@material-ui/icons/Done';
 
 // import './App.css';
-import { plateAdd, plateRemove } from './actions/plateStoreActions';
+import { plateAdd, plateRemove, plateSave } from './actions/plateStoreActions';
 import { plateLogDownload } from './actions/plateLogActions';
 import { socketConnect } from './actions/socketActions';
 import EnhancedTable from './components/EnhancedTable';
@@ -60,9 +63,21 @@ const plateStoreRows = [
   },
   {
     id: 'plate',
-    numeric: false,
+    numeric: true,
     disablePadding: false,
     label: 'Plate',
+  },
+  {
+    id: 'owner',
+    numeric: true,
+    disablePadding: false,
+    label: 'Owner',
+  },
+  {
+    id: 'department',
+    numeric: false,
+    disablePadding: false,
+    label: 'Department',
   },
 ];
 
@@ -77,6 +92,11 @@ const styles = theme => ({
 
 class App extends Component {
   state = {
+    editing: '',
+    editOwner: '',
+    editDepartment: '',
+    owner: '',
+    department: '',
     plateToAdd: '',
   };
 
@@ -87,7 +107,7 @@ class App extends Component {
 
   handleChange = (event) => {
     this.setState({
-      plateToAdd: event.target.value,
+      [event.target.name]: event.target.value,
     });
   };
 
@@ -99,9 +119,15 @@ class App extends Component {
 
     const { dispatch } = this.props;
 
-    dispatch(plateAdd(this.state.plateToAdd));
+    dispatch(plateAdd({
+      owner: this.state.owner || '-',
+      department: this.state.department || '-',
+      plateToAdd: this.state.plateToAdd,
+    }));
 
     this.setState({
+      owner: '',
+      department: '',
       plateToAdd: '',
     });
     event.preventDefault();
@@ -111,6 +137,26 @@ class App extends Component {
     const { dispatch } = this.props;
 
     dispatch(plateRemove(plate));
+  };
+
+  handlePlateEdit = (plate, owner, department) => {
+    this.setState({
+      editing: plate,
+      editOwner: owner,
+      editDepartment: department,
+    });
+  };
+
+  handlePlateEditDone = (plate) => {
+    const { dispatch } = this.props;
+    dispatch(plateSave({
+      plate,
+      owner: this.state.editOwner,
+      department: this.state.editDepartment,
+    }));
+    this.setState({
+      editing: '',
+    });
   };
 
   handlePlateLogDownload = () => {
@@ -130,7 +176,7 @@ class App extends Component {
           paddingLeft: '50px',
           paddingRight: '50px',
           paddingBottom: '25px',
-          paddingTop: '25px',
+          paddingTop: '15px',
         }}
       >
         <div
@@ -138,7 +184,7 @@ class App extends Component {
             flex: 1,
           }}
         >
-          <h1>INSEAD ALPR</h1>
+          <h1 style={{ marginBottom: 10, }}>INSEAD LPR Dashboard</h1>
         </div>
         <div
           className={classes.root}
@@ -175,12 +221,11 @@ class App extends Component {
             </Button>
           </div>
           <div
-            // style={{ minWidth: '10px', width: '80px' }}
             style={{ flex: 0.2 }}
           />
           <div
             style={{
-              flex: 2,
+              flex: 2.5,
               flexDirection: 'column',
               display: 'flex',
             }}
@@ -190,21 +235,103 @@ class App extends Component {
               data={plateStore.map(d => (
                 {
                   ...d,
-                  plate: <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    {d.plate}
-                    <Button
-                      style={{ padding: 5, minHeight: 0, minWidth: 0 }}
-                      onClick={() => this.handlePlateRemove(d.plate)}
-                    >
-                      <Tooltip
-                        title="Remove plate"
-                        placement="right"
-                        enterDelay={300}
+                  owner: this.state.editing === d.plate
+                    ? (
+                      <Input
+                        label="Owner"
+                        style={{
+                          fontSize: '14px',
+                          width: '100px',
+                        }}
+                        type="text"
+                        value={this.state.editOwner}
+                        name="editOwner"
+                        onChange={this.handleChange}
+                      />
+                    )
+                    : (
+                      <div
+                        style={{
+                          minWidth: '100px',
+                        }}
                       >
-                        <DeleteIcon style={{ height: '18px' }} />
-                      </Tooltip>
-                    </Button>
-                  </div>,
+                        {d.owner || '-'}
+                      </div>
+                    ),
+                  department: this.state.editing === d.plate
+                    ? (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Input
+                          label="Department"
+                          style={{
+                            fontSize: '14px',
+                            width: '150px',
+                          }}
+                          type="text"
+                          value={this.state.editDepartment}
+                          name="editDepartment"
+                          onChange={this.handleChange}
+                        />
+                        <Button
+                          style={{
+                            padding: 5, minHeight: 0, minWidth: 0,
+                          }}
+                          onClick={() => this.handlePlateEditDone(d.plate)}
+                        >
+                          <Tooltip
+                            title="Done"
+                            placement="right"
+                            enterDelay={300}
+                          >
+                            <DoneIcon style={{ height: '18px' }} />
+                          </Tooltip>
+                        </Button>
+                      </div>
+                    )
+                    : (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div
+                          style={{
+                            minWidth: '150px',
+                            textAlign: 'left',
+                          }}
+                        >
+                          {d.department || '-'}
+                        </div>
+                        <div
+                          style={{
+                            display: 'flex',
+                          }}
+                        >
+                          <Button
+                            style={{
+                              padding: 5, paddingRight: 0, minHeight: 0, minWidth: 0,
+                            }}
+                            onClick={() => this.handlePlateEdit(d.plate, d.owner, d.department)}
+                          >
+                            <Tooltip
+                              title="Edit"
+                              placement="right"
+                              enterDelay={300}
+                            >
+                              <EditIcon style={{ height: '18px' }} />
+                            </Tooltip>
+                          </Button>
+                          <Button
+                            style={{ padding: 5, minHeight: 0, minWidth: 0 }}
+                            onClick={() => this.handlePlateRemove(d.plate)}
+                          >
+                            <Tooltip
+                              title="Remove plate"
+                              placement="right"
+                              enterDelay={300}
+                            >
+                              <DeleteIcon style={{ height: '18px' }} />
+                            </Tooltip>
+                          </Button>
+                        </div>
+                      </div>
+                    ),
                 }
               ))}
               orderBy="addedOn"
@@ -218,13 +345,36 @@ class App extends Component {
               onSubmit={this.handlePlateAdd}
             >
               <TextField
-                label="Add plate"
+                label="Owner"
+                style={{
+                  margin: '5px',
+                  width: '120px',
+                }}
+                type="text"
+                value={this.state.owner}
+                name="owner"
+                onChange={this.handleChange}
+              />
+              <TextField
+                label="Department"
+                style={{
+                  margin: '5px',
+                  width: '120px',
+                }}
+                type="text"
+                value={this.state.department}
+                name="department"
+                onChange={this.handleChange}
+              />
+              <TextField
+                label="Plate number"
                 style={{
                   margin: '5px',
                   width: '120px',
                 }}
                 type="text"
                 value={this.state.plateToAdd}
+                name="plateToAdd"
                 onChange={this.handleChange}
               />
               <Button
@@ -250,9 +400,13 @@ const mapStateToProps = (state) => {
 
   return {
     plateLog: plateLog
-      .map(d => ({ ...d, id: d.uuid + d.plate, highlight: d.inWhitelist === 'Y' })),
+      .map(d => ({
+        ...d, id: d.uuid + d.plate, highlight: d.inWhitelist === 'Y', sortKey: d.uuid,
+      })),
     plateStore: plateStore
-      .map(d => ({ id: d.plate, ...d })),
+      .map(d => ({
+        id: d.plate, ...d, sortKey: d.uuid,
+      })),
   };
 };
 

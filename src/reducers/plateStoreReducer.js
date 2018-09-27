@@ -18,10 +18,24 @@ const plateStoreReducer = (state = initialState, action) => {
       return state;
     }
 
+    case actionTypes.PLATESTORE_SAVE: {
+      const { d, r } = action.payload;
+      if (r) {
+        return {
+          ...state,
+          plateStore: state.plateStore.map((record) => ({
+            ...record,
+            ...(d.plate === record.plate ? d : {}),
+          })),
+        };
+      }
+
+      return state;
+    }
+
     case actionTypes.PLATESTORE_ADD: {
       const { d, r } = action.payload;
       if (r) {
-        console.log(d);
         return {
           ...state,
           plateStore: [...state.plateStore, d],

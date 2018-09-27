@@ -14,6 +14,9 @@ import Tooltip from '@material-ui/core/Tooltip';
 import { lighten } from '@material-ui/core/styles/colorManipulator';
 
 function desc(a, b, orderBy) {
+  if (orderBy === 'addedOn' || orderBy === 'timestamp') {
+    orderBy = 'sortKey';
+  }
   if (b[orderBy] < a[orderBy]) {
     return -1;
   }
@@ -155,7 +158,9 @@ class EnhancedTable extends React.Component {
   };
 
   render() {
-    const { classes, tableHeading, data, rows, rowsPerPageOptions } = this.props;
+    const {
+      classes, tableHeading, data, rows, rowsPerPageOptions,
+    } = this.props;
     const {
       order, orderBy, rowsPerPage, page,
     } = this.state;
@@ -177,17 +182,16 @@ class EnhancedTable extends React.Component {
               {data
                 .sort(getSorting(order, orderBy))
                 .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                .map((n) => {
-                  return (
-                    <TableRow
+                .map(n => (
+                  <TableRow
                       // hover
-                      style={{
-                        backgroundColor: n.highlight ? '#ebfaeb' : '#ffffff',
-                      }}
-                      tabIndex={-1}
-                      key={n.id}
-                    >
-                      {
+                    style={{
+                      backgroundColor: n.highlight ? '#ebfaeb' : '#ffffff',
+                    }}
+                    tabIndex={-1}
+                    key={n.id}
+                  >
+                    {
                         rows.map(({ id }, index) => {
                           if (index === 0) {
                             return (
@@ -213,9 +217,8 @@ class EnhancedTable extends React.Component {
                           );
                         })
                       }
-                    </TableRow>
-                  );
-                })}
+                  </TableRow>
+                ))}
               {emptyRows > 0 && (
                 <TableRow style={{ height: 48 * emptyRows }}>
                   <TableCell colSpan={6} />

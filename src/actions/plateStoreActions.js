@@ -1,11 +1,16 @@
 import actionTypes from './actionTypes';
 
-export const plateAdd = plate => ({
+export const plateAdd = payload => ({
   type: actionTypes.PLATESTORE_ADD,
-  payload: plate,
+  payload,
 });
 
-export const plateRemove = plate => ({
+export const plateRemove = payload => ({
   type: actionTypes.PLATESTORE_REMOVE,
-  payload: plate,
+  payload,
+});
+
+export const plateSave = payload => ({
+  type: actionTypes.PLATESTORE_SAVE,
+  payload,
 });
