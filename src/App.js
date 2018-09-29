@@ -5,10 +5,18 @@ import { withStyles } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
 import TextField from '@material-ui/core/TextField';
 import Input from '@material-ui/core/Input';
+import Checkbox from '@material-ui/core/Checkbox';
+import Typography from '@material-ui/core/Typography';
+import FormControlLabel from '@material-ui/core/FormControlLabel';
 import DeleteIcon from '@material-ui/icons/Delete';
 import EditIcon from '@material-ui/icons/Edit';
 import Tooltip from '@material-ui/core/Tooltip';
 import DoneIcon from '@material-ui/icons/Done';
+import Dialog from '@material-ui/core/Dialog';
+import DialogActions from '@material-ui/core/DialogActions';
+import DialogContent from '@material-ui/core/DialogContent';
+import DialogContentText from '@material-ui/core/DialogContentText';
+import DialogTitle from '@material-ui/core/DialogTitle';
 
 // import './App.css';
 import { plateAdd, plateRemove, plateSave } from './actions/plateStoreActions';
@@ -90,8 +98,93 @@ const styles = theme => ({
   },
 });
 
+const DialogPlateCapture = ({
+  open, onClose, uuid, plate,
+}) => {
+  const name = `${uuid}-${plate}`;
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+    >
+      <DialogTitle>
+        Plate Capture:
+        {' '}
+        {uuid}
+      </DialogTitle>
+      <DialogContent>
+        <img
+          style={{
+            width: '500px',
+          }}
+          src={`static/plateImages/${name}.jpg`}
+          alt={`Plate capture: ${plate}`}
+        />
+        {plate}
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>
+          Close
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
+const DialogPlateRemove = ({
+  open, onClose, onRemove, whitelistInfo,
+}) => (
+  <Dialog
+    open={open}
+    onClose={onClose}
+  >
+    <DialogTitle>Confirm Remove</DialogTitle>
+    <DialogContent>
+      <DialogContentText>
+        Are you sure you wish to remove this plate whitelist?
+      </DialogContentText>
+      <div
+        style={{
+          marginTop: '10px',
+        }}
+      >
+        <span style={{ fontWeight: 700 }}>Added on:</span>
+        {' '}
+        {whitelistInfo.addedOn}
+        <br />
+        <span style={{ fontWeight: 700 }}>Plate:</span>
+        {' '}
+        {whitelistInfo.plate}
+        <br />
+        <span style={{ fontWeight: 700 }}>Owner:</span>
+        {' '}
+        {whitelistInfo.owner || '-'}
+        <br />
+        <span style={{ fontWeight: 700 }}>Department:</span>
+        {' '}
+        {whitelistInfo.department || '-'}
+        <br />
+      </div>
+    </DialogContent>
+    <DialogActions>
+      <Button onClick={onRemove}>
+        Yes
+      </Button>
+      <Button onClick={onClose}>
+        No
+      </Button>
+    </DialogActions>
+  </Dialog>
+);
+
 class App extends Component {
   state = {
+    dialogPlateCapturePlate: '',
+    dialogPlateCaptureUUID: '',
+    dialogPlateCapture: false,
+    removeWhitelistInfo: {},
+    dialogPlateRemove: false,
+    filterWhitelist: false,
     editing: '',
     editOwner: '',
     editDepartment: '',
@@ -104,6 +197,12 @@ class App extends Component {
     const { dispatch } = this.props;
     dispatch(socketConnect());
   }
+
+  handleFilterWhitelist = () => {
+    this.setState(prevState => ({
+      filterWhitelist: !prevState.filterWhitelist,
+    }));
+  };
 
   handleChange = (event) => {
     this.setState({
@@ -133,10 +232,25 @@ class App extends Component {
     event.preventDefault();
   };
 
-  handlePlateRemove = (plate) => {
+  handlePlateRemove = ({
+    addedOn, plate, owner, department,
+  }) => {
+    this.setState({
+      removeWhitelistInfo: {
+        addedOn, plate, owner, department,
+      },
+      dialogPlateRemove: true,
+    });
+  };
+
+  handlePlateRemoveConfirm = () => {
     const { dispatch } = this.props;
 
-    dispatch(plateRemove(plate));
+    dispatch(plateRemove(this.state.removeWhitelistInfo.plate));
+    this.setState({
+      dialogPlateRemove: false,
+      removeWhitelistInfo: {},
+    });
   };
 
   handlePlateEdit = (plate, owner, department) => {
@@ -179,12 +293,30 @@ class App extends Component {
           paddingTop: '15px',
         }}
       >
+        <DialogPlateCapture
+          open={this.state.dialogPlateCapture}
+          onClose={() => {
+            this.setState({
+              dialogPlateCapture: false,
+              dialogPlateCaptureUUID: '',
+              dialogPlateCapturePlate: '',
+            });
+          }}
+          uuid={this.state.dialogPlateCaptureUUID}
+          plate={this.state.dialogPlateCapturePlate}
+        />
+        <DialogPlateRemove
+          open={this.state.dialogPlateRemove}
+          onClose={() => { this.setState({ dialogPlateRemove: false, removeWhitelistInfo: {} }); }}
+          onRemove={this.handlePlateRemoveConfirm}
+          whitelistInfo={this.state.removeWhitelistInfo}
+        />
         <div
           style={{
             flex: 1,
           }}
         >
-          <h1 style={{ marginBottom: 10, }}>INSEAD LPR Dashboard</h1>
+          <h1 style={{ marginBottom: 10 }}>INSEAD LPR Dashboard</h1>
         </div>
         <div
           className={classes.root}
@@ -202,10 +334,58 @@ class App extends Component {
           >
             <EnhancedTable
               rows={plateLogRows}
-              data={plateLog}
+              data={
+                (this.state.filterWhitelist
+                  ? plateLog.filter(({ inWhitelist }) => inWhitelist === 'Y')
+                  : plateLog).map(
+                  record => ({
+                    ...record,
+                    uuid:
+                      <a
+                        onClick={() => {
+                          this.setState({
+                            dialogPlateCapturePlate: record.plate,
+                            dialogPlateCaptureUUID: record.uuid,
+                            dialogPlateCapture: true,
+                          });
+                        }}
+                        href="javascript:void(0);"
+                      >
+                        {record.uuid}
+                      </a>,
+                  }),
+                )
+              }
               orderBy="timestamp"
               rowsPerPageOptions={[5, 10, 15]}
-              tableHeading="Detection log"
+              tableHeading={(
+                <div
+                  style={{
+                    display: 'flex',
+                    flex: 1,
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                  }}
+                >
+                  <div style={{ flex: 1 }}>
+                    <Typography variant="title">
+                      Detection log
+                    </Typography>
+                  </div>
+                  <div style={{ flex: 1, justifyContent: 'flex-end', display: 'flex' }}>
+                    <FormControlLabel
+                      control={(
+                        <Checkbox
+                          checked={this.state.filterWhitelist}
+                          onChange={this.handleFilterWhitelist}
+                          value="filterWhitelist"
+                        />
+)}
+                      label="Show whitelisted only"
+                    />
+                  </div>
+                </div>
+)}
             />
             <Button
               style={{
@@ -247,6 +427,7 @@ class App extends Component {
                         value={this.state.editOwner}
                         name="editOwner"
                         onChange={this.handleChange}
+                        autoFocus
                       />
                     )
                     : (
@@ -261,31 +442,36 @@ class App extends Component {
                   department: this.state.editing === d.plate
                     ? (
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Input
-                          label="Department"
-                          style={{
-                            fontSize: '14px',
-                            width: '150px',
-                          }}
-                          type="text"
-                          value={this.state.editDepartment}
-                          name="editDepartment"
-                          onChange={this.handleChange}
-                        />
-                        <Button
-                          style={{
-                            padding: 5, minHeight: 0, minWidth: 0,
-                          }}
-                          onClick={() => this.handlePlateEditDone(d.plate)}
+                        <form
+                          onSubmit={() => this.handlePlateEditDone(d.plate)}
                         >
-                          <Tooltip
-                            title="Done"
-                            placement="right"
-                            enterDelay={300}
+                          <Input
+                            label="Department"
+                            style={{
+                              fontSize: '14px',
+                              width: '150px',
+                            }}
+                            type="text"
+                            value={this.state.editDepartment}
+                            name="editDepartment"
+                            onChange={this.handleChange}
+                          />
+                          <Button
+                            style={{
+                              padding: 5, minHeight: 0, minWidth: 0,
+                            }}
+                            onClick={() => this.handlePlateEditDone(d.plate)}
+                            type="submit"
                           >
-                            <DoneIcon style={{ height: '18px' }} />
-                          </Tooltip>
-                        </Button>
+                            <Tooltip
+                              title="Done"
+                              placement="right"
+                              enterDelay={300}
+                            >
+                              <DoneIcon style={{ height: '18px' }} />
+                            </Tooltip>
+                          </Button>
+                        </form>
                       </div>
                     )
                     : (
@@ -319,7 +505,7 @@ class App extends Component {
                           </Button>
                           <Button
                             style={{ padding: 5, minHeight: 0, minWidth: 0 }}
-                            onClick={() => this.handlePlateRemove(d.plate)}
+                            onClick={() => this.handlePlateRemove(d)}
                           >
                             <Tooltip
                               title="Remove plate"
@@ -336,7 +522,11 @@ class App extends Component {
               ))}
               orderBy="addedOn"
               rowsPerPageOptions={[5, 10, 15]}
-              tableHeading="Plate whitelist"
+              tableHeading={(
+                <Typography variant="title">
+                  Plate whitelist
+                </Typography>
+)}
             />
             <form
               style={{
@@ -370,6 +560,7 @@ class App extends Component {
                 label="Plate number"
                 style={{
                   margin: '5px',
+                  marginRight: '10px',
                   width: '120px',
                 }}
                 type="text"

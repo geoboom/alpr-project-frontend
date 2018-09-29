@@ -1,3 +1,5 @@
+const SERVER_IP = window.location.hostname;
+
 export default {
-  SERVER_URL: `http://${window.location.hostname}:3001`,
+  SERVER_URL: `http://${SERVER_IP}:3001`,
 };
